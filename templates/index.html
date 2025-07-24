@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --background-dark: #1a1a1a; --card-background: rgba(20, 20, 20, 0.75); --text-primary: #f0f0f0; --text-secondary: #a0a0a0; --accent-gold: #d4af37; --accent-green: #2a9d8f; --border-color: rgba(255, 255, 255, 0.1); }
+        :root { --background-dark: #1a1a1a; --card-background: rgba(20, 20, 20, 0.75); --text-primary: #f0f0f0; --text-secondary: #a0a0a0; --accent-gold: #d4af37; --accent-green: #2a9d8f; --accent-red: #c94040; --border-color: rgba(255, 255, 255, 0.1); }
         body { font-family: 'Roboto', sans-serif; background-color: var(--background-dark); background-image: url('https://images.pexels.com/photos/2292837/pexels-photo-2292837.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'); background-size: cover; background-position: center; background-attachment: fixed; color: var(--text-primary); margin: 0; padding: 20px; }
         .page-wrapper { max-width: 1200px; margin: 0 auto; }
         header { text-align: center; padding: 20px; background: rgba(0,0,0,0.6); border-radius: 12px; margin-bottom: 30px; }
@@ -23,6 +23,9 @@
         input[type="text"], input[type="number"], select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); box-sizing: border-box; }
         button { background-color: var(--accent-green); color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 500; font-size: 1em; transition: background-color 0.2s; }
         button:hover { background-color: #258a7e; }
+        .delete-button { background-color: var(--accent-red); margin-top: 10px; }
+        .delete-button:hover { background-color: #a13232; }
+        .small-delete-button { background-color: var(--accent-red); width: auto; padding: 2px 8px; font-size: 0.8em; margin-left: 10px; }
         .leaderboard-table { width: 100%; border-collapse: collapse; }
         .leaderboard-table th, .leaderboard-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
         .leaderboard-table th { color: var(--accent-gold); }
@@ -33,6 +36,7 @@
         .leaderboard-table tbody tr:nth-child(3) { background-color: rgba(205, 127, 50, 0.15); }
         .leaderboard-table tbody tr:nth-child(3) td:first-child::before { content: '🥉 '; }
         .match-bets-list { list-style: none; padding: 0; color: var(--text-secondary); }
+        .match-bets-list li { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .finished-match { border-left: 5px solid var(--accent-green); }
     </style>
 </head>
@@ -41,7 +45,9 @@
         <header>
             <h1>⚽ Firmowy Typer Meczowy ⚽</h1>
             <div class="club-logos">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Legia_Warszawa_logo.svg/1200px-Legia_Warszawa_logo.svg.png" alt="Legia Warszawa">
                 <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/1200px-Arsenal_FC.svg.png" alt="Arsenal">
+                <img src="https://upload.wikimedia.org/wikipedia/hif/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png" alt="FC Barcelona">
                 <img src="https://upload.wikimedia.org/wikipedia/en/thumb/0/0c/Liverpool_FC.svg/1200px-Liverpool_FC.svg.png" alt="Liverpool FC">
                 <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" alt="Real Madrid">
             </div>
@@ -51,7 +57,12 @@
                 <h2>Mecze</h2>
                 {% for match in matches %}
                     <div class="card {% if match.is_finished %}finished-match{% endif %}">
-                        <h3>{{ match.home_team }} vs {{ match.away_team }}</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3>{{ match.home_team }} vs {{ match.away_team }}</h3>
+                            <form action="{{ url_for('delete_match', match_id=match.id) }}" method="POST" onsubmit="return confirm('Czy na pewno chcesz usunąć ten mecz i wszystkie jego typy?');">
+                                <button type="submit" class="delete-button" style="width: auto; padding: 5px 10px; font-size: 0.8em; margin-top: 0;">Usuń Mecz</button>
+                            </form>
+                        </div>
                         {% if match.is_finished %}
                             <p><strong>Wynik końcowy: {{ match.home_score }} - {{ match.away_score }}</strong></p>
                         {% else %}
@@ -67,7 +78,18 @@
                             </form>
                         {% endif %}
                         <h4 style="border-color: var(--border-color);">Obstawione wyniki:</h4>
-                        <ul class="match-bets-list">{% for bet in match.bets %}<li>{{ bet.user.name }}: {{ bet.bet_home_score }} - {{ bet.bet_away_score }}</li>{% else %}<li>Nikt jeszcze nie obstawił.</li>{% endfor %}</ul>
+                        <ul class="match-bets-list">
+                            {% for bet in match.bets %}
+                                <li>
+                                    <span>{{ bet.user.name }}: {{ bet.bet_home_score }} - {{ bet.bet_away_score }}</span>
+                                    <form action="{{ url_for('delete_bet', bet_id=bet.id) }}" method="POST" onsubmit="return confirm('Usunąć ten typ?');">
+                                        <button type="submit" class="small-delete-button">X</button>
+                                    </form>
+                                </li>
+                            {% else %}
+                                <li>Nikt jeszcze nie obstawił.</li>
+                            {% endfor %}
+                        </ul>
                     </div>
                 {% endfor %}
             </div>
@@ -75,8 +97,22 @@
                 <div class="card">
                     <h2>🏆 Tabela wyników 🏆</h2>
                     <table class="leaderboard-table">
-                        <thead><tr><th>Gracz</th><th>Punkty</th></tr></thead>
-                        <tbody>{% for user in users %}<tr><td>{{ user.name }}</td><td>{{ user.points }}</td></tr>{% else %}<tr><td colspan="2">Brak graczy</td></tr>{% endfor %}</tbody>
+                        <thead><tr><th>Gracz</th><th>Punkty</th><th>Akcja</th></tr></thead>
+                        <tbody>
+                            {% for user in users %}
+                                <tr>
+                                    <td>{{ user.name }}</td>
+                                    <td>{{ user.points }}</td>
+                                    <td>
+                                        <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" onsubmit="return confirm('Czy na pewno chcesz usunąć gracza {{ user.name }} i wszystkie jego typy?');">
+                                            <button type="submit" class="small-delete-button">X</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="3">Brak graczy</td></tr>
+                            {% endfor %}
+                        </tbody>
                     </table>
                 </div>
                 <div class="card">
