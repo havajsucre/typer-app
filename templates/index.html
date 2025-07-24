@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typer Firmowy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --background-dark: #1a1a1a; --card-background: rgba(20, 20, 20, 0.75); --text-primary: #f0f0f0; --text-secondary: #a0a0a0; --accent-gold: #d4af37; --accent-green: #2a9d8f; --border-color: rgba(255, 255, 255, 0.1); }
+        body { font-family: 'Roboto', sans-serif; background-color: var(--background-dark); background-image: url('https://images.pexels.com/photos/2292837/pexels-photo-2292837.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'); background-size: cover; background-position: center; background-attachment: fixed; color: var(--text-primary); margin: 0; padding: 20px; }
+        .page-wrapper { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; padding: 20px; background: rgba(0,0,0,0.6); border-radius: 12px; margin-bottom: 30px; }
+        header h1 { font-weight: 700; font-size: 2.5em; margin: 0 0 15px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .club-logos img { height: 40px; margin: 0 15px; transition: transform 0.2s ease-in-out; }
+        .club-logos img:hover { transform: scale(1.1); }
+        .container { display: flex; gap: 30px; flex-wrap: wrap; }
+        .main-content, .sidebar { flex: 1; min-width: 300px; }
+        .main-content { flex: 3; }
+        .card { background: var(--card-background); backdrop-filter: blur(10px); padding: 20px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--border-color); }
+        h2, h3, h4 { border-bottom: 2px solid var(--accent-gold); padding-bottom: 10px; margin-top: 0; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); box-sizing: border-box; }
+        button { background-color: var(--accent-green); color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 500; font-size: 1em; transition: background-color 0.2s; }
+        button:hover { background-color: #258a7e; }
+        .leaderboard-table { width: 100%; border-collapse: collapse; }
+        .leaderboard-table th, .leaderboard-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .leaderboard-table th { color: var(--accent-gold); }
+        .leaderboard-table tbody tr:nth-child(1) { background-color: rgba(255, 215, 0, 0.15); font-weight: bold; }
+        .leaderboard-table tbody tr:nth-child(1) td:first-child::before { content: '🥇 '; }
+        .leaderboard-table tbody tr:nth-child(2) { background-color: rgba(192, 192, 192, 0.15); }
+        .leaderboard-table tbody tr:nth-child(2) td:first-child::before { content: '🥈 '; }
+        .leaderboard-table tbody tr:nth-child(3) { background-color: rgba(205, 127, 50, 0.15); }
+        .leaderboard-table tbody tr:nth-child(3) td:first-child::before { content: '🥉 '; }
+        .match-bets-list { list-style: none; padding: 0; color: var(--text-secondary); }
+        .finished-match { border-left: 5px solid var(--accent-green); }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <header>
+            <h1>⚽ Firmowy Typer Meczowy ⚽</h1>
+            <div class="club-logos">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/1200px-Arsenal_FC.svg.png" alt="Arsenal">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/0/0c/Liverpool_FC.svg/1200px-Liverpool_FC.svg.png" alt="Liverpool FC">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" alt="Real Madrid">
+            </div>
+        </header>
+        <div class="container">
+            <div class="main-content">
+                <h2>Mecze</h2>
+                {% for match in matches %}
+                    <div class="card {% if match.is_finished %}finished-match{% endif %}">
+                        <h3>{{ match.home_team }} vs {{ match.away_team }}</h3>
+                        {% if match.is_finished %}
+                            <p><strong>Wynik końcowy: {{ match.home_score }} - {{ match.away_score }}</strong></p>
+                        {% else %}
+                            <form action="{{ url_for('add_bet', match_id=match.id) }}" method="POST">
+                                <select name="user_id" required><option value="">Wybierz siebie</option>{% for user in users %}<option value="{{ user.id }}">{{ user.name }}</option>{% endfor %}</select>
+                                <input type="number" name="bet_home_score" placeholder="Gole gosp." required min="0"><input type="number" name="bet_away_score" placeholder="Gole gości" required min="0">
+                                <button type="submit">Obstaw</button>
+                            </form>
+                            <hr style="border-color: var(--border-color); margin: 20px 0;">
+                            <form action="{{ url_for('update_score', match_id=match.id) }}" method="POST">
+                                <input type="number" name="home_score" placeholder="Końcowy wynik gosp." min="0"><input type="number" name="away_score" placeholder="Końcowy wynik gości" min="0">
+                                <button type="submit" style="background-color: var(--accent-gold);">Zapisz wynik i przelicz punkty</button>
+                            </form>
+                        {% endif %}
+                        <h4 style="border-color: var(--border-color);">Obstawione wyniki:</h4>
+                        <ul class="match-bets-list">{% for bet in match.bets %}<li>{{ bet.user.name }}: {{ bet.bet_home_score }} - {{ bet.bet_away_score }}</li>{% else %}<li>Nikt jeszcze nie obstawił.</li>{% endfor %}</ul>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="sidebar">
+                <div class="card">
+                    <h2>🏆 Tabela wyników 🏆</h2>
+                    <table class="leaderboard-table">
+                        <thead><tr><th>Gracz</th><th>Punkty</th></tr></thead>
+                        <tbody>{% for user in users %}<tr><td>{{ user.name }}</td><td>{{ user.points }}</td></tr>{% else %}<tr><td colspan="2">Brak graczy</td></tr>{% endfor %}</tbody>
+                    </table>
+                </div>
+                <div class="card">
+                    <h2>Dodaj gracza</h2>
+                    <form action="{{ url_for('add_user') }}" method="POST"><input type="text" name="name" placeholder="Twoje imię" required><button type="submit">Dodaj</button></form>
+                </div>
+                <div class="card">
+                    <h2>Dodaj nowy mecz</h2>
+                    <form action="{{ url_for('add_match') }}" method="POST"><input type="text" name="home_team" placeholder="Gospodarze" required><input type="text" name="away_team" placeholder="Goście" required><button type="submit">Dodaj mecz</button></form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
